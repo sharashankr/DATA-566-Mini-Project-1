@@ -8,6 +8,7 @@ output: html_document
 ```{r}
 # Loading Dependencies
 library(tidyverse)
+library(dplyr)
 
 # Loading the Data
 HealthInsurance <- read_csv("/Users/sharathchandrashankar/Downloads/health_insurance.csv")
@@ -37,4 +38,37 @@ z_stat
 # 3d. p-value
 p_value <- 2 * (1 - pnorm(abs(z_stat)))
 p_value
+
+# Part C: Self-employment and health insurance
+
+# 1. Proportion of self-employed individuals
+p_selfemp <- mean(HealthInsurance$selfemp == "yes")
+p_selfemp  # Result: proportion of individuals who are self-employed
+
+# 2. Point estimates and 95% confidence intervals for insured by employment status
+insurance_by_emp <- HealthInsurance %>%
+  group_by(selfemp) %>%
+  summarize(
+    n = n(),                          # total individuals in each group
+    insured = sum(insurance == "yes"),# number with insurance
+    p_hat = insured / n               # sample proportion insured
+  ) %>%
+  mutate(
+    se = sqrt(p_hat * (1 - p_hat) / n),          # standard error
+    lower = p_hat - 1.96 * se,                  # lower bound of 95% CI
+    upper = p_hat + 1.96 * se                   # upper bound of 95% CI
+  )
+
+insurance_by_emp  # Result: sample proportion, standard error, and 95% CI for each group
+
+# 3. Two-sample test for equality of proportions
+table_emp <- table(HealthInsurance$selfemp, HealthInsurance$insurance)
+
+prop_test <- prop.test(
+  x = c(table_emp["yes", "yes"], table_emp["no", "yes"]),  # successes
+  n = c(sum(table_emp["yes", ]), sum(table_emp["no", ])), # total per group
+  correct = FALSE                                         # no continuity correction
+)
+
+prop_test  # Result: chi-squared test statistic, p-value, confidence interval
 ```
