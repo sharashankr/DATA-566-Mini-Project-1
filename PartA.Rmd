@@ -1,0 +1,40 @@
+---
+title: "Mini Project DATA 557"
+author: "Sharath Chandra Shankar"
+date: "2026-02-04"
+output: html_document
+---
+
+```{r}
+# Loading Dependencies
+library(tidyverse)
+
+# Loading the Data
+HealthInsurance <- read_csv("/Users/sharathchandrashankar/Downloads/health_insurance.csv")
+
+# 1. Proportion with health insurance
+n_insurance <- HealthInsurance |> filter(insurance == 'yes') |> nrow()
+n <- nrow(HealthInsurance)
+p_hat <- n_insurance / n
+p_hat
+
+# 2a. 95% Confidence Interval for population proportion
+z <- qnorm(0.975)
+se <- sqrt(p_hat * (1 - p_hat) / n)
+lower <- p_hat - z * se
+upper <- p_hat + z * se
+c(lower = lower, upper = upper)
+
+# 2b. Standard Error
+se
+
+# 3c. One-sample z-test for proportion
+p0 <- 0.846
+SE0 <- sqrt(p0 * (1 - p0) / n)
+z_stat <- (p_hat - p0) / SE0
+z_stat
+
+# 3d. p-value
+p_value <- 2 * (1 - pnorm(abs(z_stat)))
+p_value
+```
