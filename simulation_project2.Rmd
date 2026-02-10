@@ -1,0 +1,32 @@
+```{r}
+# Set seed for reproducibility
+set.seed(5571)
+
+# Parameters
+n <- 10000                 # Sample size per group
+p_control <- 0.02          # Control conversion rate
+p_treatment <- 0.025       # Treatment conversion rate (25% increase)
+n_sim <- 1000              # Number of simulations
+alpha <- 0.05              # Significance level
+
+# Function to perform a two-proportion z-test
+two_prop_test <- function(x1, n1, x2, n2, alpha = 0.05) {
+  p1 <- x1 / n1
+  p2 <- x2 / n2
+  p_pool <- (x1 + x2) / (n1 + n2)
+  z <- (p1 - p2) / sqrt(p_pool * (1 - p_pool) * (1/n1 + 1/n2))
+  p_value <- 2 * (1 - pnorm(abs(z)))  # Two-sided
+  return(p_value < alpha)
+}
+
+# Run simulation
+results <- replicate(n_sim, {
+  x1 <- rbinom(1, n, p_control)
+  x2 <- rbinom(1, n, p_treatment)
+  two_prop_test(x1, n, x2, n, alpha)
+})
+
+# Empirical power
+empirical_power <- mean(results)
+empirical_power
+```
