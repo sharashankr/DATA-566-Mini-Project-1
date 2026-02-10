@@ -1,3 +1,5 @@
+###################################################################
+# PART 1, Statistical Power​ - Q1
 ```{r}
 # Set seed for reproducibility
 set.seed(5571)
@@ -5,7 +7,7 @@ set.seed(5571)
 # Parameters
 n <- 10000                 # Sample size per group
 p_control <- 0.02          # Control conversion rate
-p_treatment <- 0.025       # Treatment conversion rate (25% increase)
+p_exp <- 0.025             # Conversion rate (25% increase)
 n_sim <- 1000              # Number of simulations
 alpha <- 0.05              # Significance level
 
@@ -22,7 +24,7 @@ two_prop_test <- function(x1, n1, x2, n2, alpha = 0.05) {
 # Run simulation
 results <- replicate(n_sim, {
   x1 <- rbinom(1, n, p_control)
-  x2 <- rbinom(1, n, p_treatment)
+  x2 <- rbinom(1, n, p_exp)
   two_prop_test(x1, n, x2, n, alpha)
 })
 
@@ -30,3 +32,128 @@ results <- replicate(n_sim, {
 empirical_power <- mean(results)
 empirical_power
 ```
+# PART 1, Statistical Power​ - Q2
+```{r}
+# New sample sizes
+scenarios <- list(
+  "5000 each" = c(15000, 15000),
+  "10000 control" = c(20000, 10000),
+  "10000 exp" = c(10000, 20000)
+)
+
+# Function to simulate power for each scenario
+simulate_power <- function(n1, n2, n_sim = 1000) {
+  results <- replicate(n_sim, {
+    x1 <- rbinom(1, n1, p_control)
+    x2 <- rbinom(1, n2, p_exp)
+    two_prop_test(x1, n1, x2, n2, alpha)
+  })
+  return(mean(results))
+}
+
+# Compute power for each scenario
+sapply(scenarios, function(x) simulate_power(x[1], x[2]))
+```
+# PART 1, Statistical Power​ - Q3
+```{r}
+# Range of treatment conversion rates
+p_treatment_vals <- seq(0.015, 0.03, by = 0.0025)
+
+# Compute power for each value
+power_vals <- sapply(p_exp_vals, function(p_exp) {
+  results <- replicate(n_sim, {
+    x1 <- rbinom(1, n, p_control)
+    x2 <- rbinom(1, n, p_exp)
+    two_prop_test(x1, n, x2, n, alpha)
+  })
+  mean(results)
+})
+
+# Plot power curve
+plot(p_exp_vals, power_vals, type = "b", pch = 19, col = "blue",
+     xlab = "True Ads Conversion Rate",
+     ylab = "Empirical Power",
+     main = "Power vs True Ads Conversion Rate")
+abline(h = 0.8, col = "red", lty = 2)  # Common target power
+
+p_exp_vals
+power_vals
+```
+###################################################################
+
+###################################################################
+# PART 2, Linear Regression Assumptions​, Option 1: Normality - Q1​
+```{r}
+set.seed(19)
+
+n <- 100
+x <- seq(0, 1, length.out = n)
+n_sim <- 10000
+
+# Storage
+beta1_hat_norm <- numeric(n_sim)
+se_beta1_hat_norm <- numeric(n_sim)
+
+beta1_hat_chisq <- numeric(n_sim)
+se_beta1_hat_chisq <- numeric(n_sim)
+
+for (i in 1:n_sim) {
+  # Normal errors
+  y_norm <- x + rnorm(n, 0, sd=2)
+  mod_norm <- lm(y_norm ~ x)
+  beta1_hat_norm[i] <- coef(mod_norm)[2]
+  se_beta1_hat_norm[i] <- summary(mod_norm)$coefficients[2,2]
+  
+  # Chi-squared errors
+  y_chisq <- x + (rchisq(n, 2)-2)
+  mod_chisq <- lm(y_chisq ~ x)
+  beta1_hat_chisq[i] <- coef(mod_chisq)[2]
+  se_beta1_hat_chisq[i] <- summary(mod_chisq)$coefficients[2,2]
+}
+
+par(mfrow=c(1,2))
+hist(beta1_hat_norm, breaks=50, main="Slope Estimates: Normal Errors",
+     xlab=expression(hat(beta)[1]), col="skyblue")
+abline(v=1, col="red", lwd=2)
+
+hist(beta1_hat_chisq, breaks=50, main="Slope Estimates: Chi-squared Errors",
+     xlab=expression(hat(beta)[1]), col="orange")
+abline(v=1, col="red", lwd=2)
+
+```
+# PART 2, Linear Regression Assumptions​, Option 1: Normality - Q2
+```{r}
+sigma <- 2  # true SD for normal errors
+se_theoretical <- sigma / sqrt(sum((x - mean(x))^2))
+se_theoretical
+
+
+sd(beta1_hat_norm)
+sd(beta1_hat_chisq)
+
+
+par(mfrow=c(1,2))
+hist(se_beta1_hat_norm, breaks=50, main="Estimated SEs: Normal Errors",
+     xlab="SE", col="skyblue")
+abline(v=se_theoretical, col="red", lwd=2)
+
+hist(se_beta1_hat_chisq, breaks=50, main="Estimated SEs: Chi-squared Errors",
+     xlab="SE", col="orange")
+abline(v=mean(se_beta1_hat_chisq), col="red", lwd=2)
+```
+
+# PART 2, Linear Regression Assumptions​, Option 1: Normality - Q3
+```{r}
+# Normal
+coverage_norm <- mean((beta1_hat_norm - 1.96*se_beta1_hat_norm <= 1) &
+                      (beta1_hat_norm + 1.96*se_beta1_hat_norm >= 1))
+
+# Chi-squared
+coverage_chisq <- mean((beta1_hat_chisq - 1.96*se_beta1_hat_chisq <= 1) &
+                       (beta1_hat_chisq + 1.96*se_beta1_hat_chisq >= 1))
+
+coverage_norm
+coverage_chisq
+
+```
+###################################################################
